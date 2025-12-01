@@ -12,10 +12,11 @@ class WelcomeViewModel(
 
     val isFirstLaunch: Flow<Boolean> = userPreferencesRepository.isFirstLaunch
 
-    fun saveProfile(userName: String, companyName: String) {
+    fun saveProfile(userName: String, companyName: String, currency: String) {
         viewModelScope.launch {
             userPreferencesRepository.setUserName(userName)
             userPreferencesRepository.setCompanyName(companyName)
+            userPreferencesRepository.setLocalCurrency(currency)
             userPreferencesRepository.setFirstLaunchComplete()
         }
     }

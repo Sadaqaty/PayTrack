@@ -12,9 +12,9 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@drawable/ic_paytrack"
+        android:icon="@drawable/paytrack"
         android:label="@string/app_name"
-        android:roundIcon="@drawable/ic_paytrack"
+        android:roundIcon="@drawable/paytrack"
         android:supportsRtl="true"
         android:theme="@style/Theme.PayTrack">
         <activity

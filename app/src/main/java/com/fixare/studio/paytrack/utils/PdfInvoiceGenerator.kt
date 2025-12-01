@@ -35,84 +35,108 @@ class PdfInvoiceGenerator(private val context: Context) {
         val lightGray = Color.rgb(200, 200, 200)
         val warningColor = Color.rgb(255, 152, 0) // Orange
         val errorColor = Color.rgb(244, 67, 54) // Red
+        val white = Color.WHITE
 
         // Margins
         val startX = 50f
         val endX = 545f
         var currentY = 50f
 
-        // Header: INVOICE
+        // -----------------------------------------------------------------------
+        // HEADER SECTION
+        // -----------------------------------------------------------------------
+
+        // App Name (PayTrack) - Prominent Green Header
         paint.color = primaryColor
         paint.textSize = 36f
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        paint.textAlign = Paint.Align.LEFT
+        canvas.drawText("PayTrack", startX, currentY + 20, paint)
+
+        // INVOICE Title (Right aligned)
+        paint.color = darkGray
+        paint.textSize = 24f
         paint.textAlign = Paint.Align.RIGHT
         val title = if (payment.status == PaymentStatus.PAID) "INVOICE" else "INVOICE (PENDING)"
         canvas.drawText(title, endX, currentY + 20, paint)
-        
-        // App Name
-        paint.color = lightGray
-        paint.textSize = 12f
-        paint.textAlign = Paint.Align.LEFT
-        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.ITALIC)
-        canvas.drawText("PayTrack", startX, currentY, paint)
-        currentY += 20
 
-        // Company Name (Freelancer)
-        paint.color = darkGray
-        paint.textAlign = Paint.Align.LEFT
-        paint.textSize = 20f
-        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        val displayCompanyName = if (companyName.isNotBlank()) companyName else "PayTrack Freelancer"
-        canvas.drawText(displayCompanyName, startX, currentY + 20, paint)
-        
-        currentY += 25
-        if (userName.isNotBlank()) {
-            paint.textSize = 14f
-            paint.color = Color.GRAY
-            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-            canvas.drawText(userName, startX, currentY, paint)
-        }
-        
-        currentY += 60
+        currentY += 50
 
-        // Separator
+        // Header Divider
         paint.color = primaryColor
         paint.strokeWidth = 2f
         canvas.drawLine(startX, currentY, endX, currentY, paint)
         
         currentY += 40
 
-        // Invoice Details
-        paint.color = darkGray
-        paint.textSize = 14f
-        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+        // -----------------------------------------------------------------------
+        // COMPANY / USER DETAILS SECTION
+        // -----------------------------------------------------------------------
 
-        val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.US)
-        val dateStr = dateFormat.format(Date(payment.date))
-        
-        // Bill To
+        val leftColumnX = startX
+        val rightColumnX = 350f
+
+        // FROM (User/Company Details)
+        paint.color = lightGray
+        paint.textSize = 10f
+        paint.textAlign = Paint.Align.LEFT
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        canvas.drawText("BILL TO:", startX, currentY, paint)
-        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-        currentY += 20
-        canvas.drawText(client.name, startX, currentY, paint)
-        currentY += 20
-        canvas.drawText(client.projectName, startX, currentY, paint)
-        
-        // Invoice Meta (Right side)
-        val metaX = 400f
-        val metaY = currentY - 40
+        canvas.drawText("FROM:", leftColumnX, currentY, paint)
+
+        currentY += 15
+
+        paint.color = darkGray
+        paint.textSize = 16f
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        canvas.drawText("Invoice #:", metaX, metaY, paint)
-        canvas.drawText("Date:", metaX, metaY + 20, paint)
-        canvas.drawText("Status:", metaX, metaY + 40, paint)
+        
+        // Company Name takes precedence if available
+        if (companyName.isNotBlank()) {
+            canvas.drawText(companyName, leftColumnX, currentY, paint)
+            currentY += 20
+        }
+
+        // User Name
+        if (userName.isNotBlank()) {
+            paint.textSize = 14f
+            paint.color = if (companyName.isNotBlank()) Color.GRAY else darkGray
+            paint.typeface = Typeface.create(Typeface.DEFAULT, if (companyName.isNotBlank()) Typeface.NORMAL else Typeface.BOLD)
+            canvas.drawText(userName, leftColumnX, currentY, paint)
+            currentY += 20
+        } else if (companyName.isBlank()) {
+             // Fallback if absolutely nothing is set
+             canvas.drawText("PayTrack Freelancer", leftColumnX, currentY, paint)
+             currentY += 20
+        }
+
+        // Reset Y for Right Column (Invoice Meta)
+        val metaStartY = 90f + 15f // Roughly where "FROM" started + offset
+        var metaY = metaStartY
+        
+        // Invoice Details (Right side)
+        paint.color = darkGray
+        paint.textSize = 12f
+        paint.textAlign = Paint.Align.RIGHT
+        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        
+        // Labels
+        val labelX = endX - 100f
+        val valueX = endX
+
+        paint.textAlign = Paint.Align.LEFT
+        canvas.drawText("Invoice #:", labelX, metaY, paint)
+        canvas.drawText("Date:", labelX, metaY + 20, paint)
+        canvas.drawText("Status:", labelX, metaY + 40, paint)
         
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
         paint.textAlign = Paint.Align.RIGHT
-        canvas.drawText(payment.id.toString().padStart(6, '0'), endX, metaY, paint)
-        canvas.drawText(dateStr, endX, metaY + 20, paint)
         
-        // Status Color
+        // Values
+        val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.US)
+        val dateStr = dateFormat.format(Date(payment.date))
+        
+        canvas.drawText(payment.id.toString().padStart(6, '0'), valueX, metaY, paint)
+        canvas.drawText(dateStr, valueX, metaY + 20, paint)
+        
         val statusColor = when(payment.status) {
             PaymentStatus.PAID -> primaryColor
             PaymentStatus.PENDING -> warningColor
@@ -120,19 +144,46 @@ class PdfInvoiceGenerator(private val context: Context) {
         }
         paint.color = statusColor
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        canvas.drawText(payment.status.name, endX, metaY + 40, paint)
-        paint.color = darkGray
-        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+        canvas.drawText(payment.status.name, valueX, metaY + 40, paint)
+
+        // Move currentY down to clear both columns
+        currentY = maxOf(currentY, metaY + 60) + 30
+
+        // -----------------------------------------------------------------------
+        // BILL TO SECTION
+        // -----------------------------------------------------------------------
+
+        paint.color = lightGray
+        paint.textSize = 10f
         paint.textAlign = Paint.Align.LEFT
+        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        canvas.drawText("BILL TO:", startX, currentY, paint)
+        
+        currentY += 20
+        paint.color = darkGray
+        paint.textSize = 16f
+        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        canvas.drawText(client.name, startX, currentY, paint)
+        
+        currentY += 20
+        paint.textSize = 14f
+        paint.color = Color.GRAY
+        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+        canvas.drawText(client.projectName, startX, currentY, paint)
 
-        currentY += 80
+        currentY += 50
 
-        // Table Header
+        // -----------------------------------------------------------------------
+        // TABLE SECTION
+        // -----------------------------------------------------------------------
+
+        // Table Header Background
         paint.color = primaryColor
         paint.style = Paint.Style.FILL
         canvas.drawRect(startX, currentY, endX, currentY + 30, paint)
         
-        paint.color = Color.WHITE
+        // Table Header Text
+        paint.color = white
         paint.textSize = 12f
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         
@@ -155,9 +206,9 @@ class PdfInvoiceGenerator(private val context: Context) {
         
         paint.textAlign = Paint.Align.RIGHT
         
-        // Use original currency and amount if available, otherwise fallback to local converted amount
+        // Use original currency and amount if available
         val displayAmount = payment.originalAmount ?: payment.amount
-        val displayCurrency = payment.originalCurrency ?: client.currency // Fallback to client default currency if original not stored yet (older records)
+        val displayCurrency = payment.originalCurrency ?: client.currency
         
         val amountStr = String.format(Locale.US, "%s %.2f", displayCurrency, displayAmount)
         canvas.drawText(amountStr, endX - 10, currentY, paint)
@@ -168,23 +219,28 @@ class PdfInvoiceGenerator(private val context: Context) {
         paint.strokeWidth = 1f
         canvas.drawLine(startX, currentY + 15, endX, currentY + 15, paint)
         
-        currentY += rowHeight
+        currentY += rowHeight + 20
 
-        // Total
-        currentY += 20
+        // -----------------------------------------------------------------------
+        // TOTAL SECTION
+        // -----------------------------------------------------------------------
+
         paint.color = darkGray
         paint.textSize = 16f
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         
         val totalLabel = "TOTAL"
         paint.textAlign = Paint.Align.RIGHT
-        canvas.drawText(totalLabel, endX - 120, currentY, paint)
+        canvas.drawText(totalLabel, endX - 150, currentY, paint)
         
         paint.color = primaryColor
-        paint.textSize = 18f
+        paint.textSize = 20f
         canvas.drawText(amountStr, endX - 10, currentY, paint)
 
-        // Footer
+        // -----------------------------------------------------------------------
+        // FOOTER SECTION
+        // -----------------------------------------------------------------------
+        
         val footerY = 800f
         paint.color = lightGray
         paint.textSize = 10f
@@ -201,5 +257,9 @@ class PdfInvoiceGenerator(private val context: Context) {
         } finally {
             pdfDocument.close()
         }
+    }
+    
+    private fun maxOf(a: Float, b: Float): Float {
+        return if (a > b) a else b
     }
 }
