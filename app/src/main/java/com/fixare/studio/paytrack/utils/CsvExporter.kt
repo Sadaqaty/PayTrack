@@ -1,5 +1,6 @@
 package com.fixare.studio.paytrack.utils
 
+import com.fixare.studio.paytrack.data.Client
 import com.fixare.studio.paytrack.data.Expense
 import com.fixare.studio.paytrack.data.PaymentLog
 import java.io.OutputStream
@@ -7,15 +8,36 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 class CsvExporter {
+    
+    private fun escape(value: String): String {
+        var processed = value.replace("\"", "\"\"") // Escape double quotes
+        if (processed.contains(",") || processed.contains("\n") || value.contains("\"")) {
+            processed = "\"$processed\""
+        }
+        return processed
+    }
+
+    fun exportClients(clients: List<Client>, outputStream: OutputStream) {
+        val writer = outputStream.bufferedWriter()
+        writer.write("ID,Name,Project Name,Contract Start,Payment Cycle,Rate,Currency,Status,Notes\n")
+        clients.forEach { client ->
+            val name = escape(client.name)
+            val project = escape(client.projectName)
+            val notes = escape(client.notes)
+            writer.write("${client.id},$name,$project,${client.contractStartDate},${client.paymentCycle},${client.rate},${client.currency},${client.status},$notes\n")
+        }
+        writer.flush()
+    }
+
     fun exportPaymentLogs(logs: List<PaymentLog>, outputStream: OutputStream) {
         val writer = outputStream.bufferedWriter()
         val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
         
-        writer.write("ID,Client ID,Amount,Date,Status,Note\n")
+        writer.write("ID,Client ID,Amount,Date,Status,Note,IsManual,OriginalAmount,OriginalCurrency\n")
         logs.forEach { log ->
             val dateStr = dateFormat.format(java.util.Date(log.date))
-            val noteEscaped = log.note.replace(",", " ") // basic escape
-            writer.write("${log.id},${log.clientId},${log.amount},$dateStr,${log.status},$noteEscaped\n")
+            val note = escape(log.note)
+            writer.write("${log.id},${log.clientId},${log.amount},$dateStr,${log.status},$note,${log.isManualIncome},${log.originalAmount ?: ""},${log.originalCurrency ?: ""}\n")
         }
         writer.flush()
     }
@@ -27,8 +49,9 @@ class CsvExporter {
         writer.write("ID,Amount,Category,Date,Note\n")
         expenses.forEach { expense ->
             val dateStr = dateFormat.format(java.util.Date(expense.date))
-            val noteEscaped = expense.note.replace(",", " ")
-            writer.write("${expense.id},${expense.amount},${expense.category},$dateStr,$noteEscaped\n")
+            val category = escape(expense.category)
+            val note = escape(expense.note)
+            writer.write("${expense.id},${expense.amount},$category,$dateStr,$note\n")
         }
         writer.flush()
     }

@@ -10,8 +10,11 @@ import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.fixare.studio.paytrack.data.Client
+import com.fixare.studio.paytrack.data.ClientStatus
 import com.fixare.studio.paytrack.data.Expense
 import com.fixare.studio.paytrack.data.PayTrackRepository
+import com.fixare.studio.paytrack.data.PaymentCycle
 import com.fixare.studio.paytrack.data.PaymentLog
 import com.fixare.studio.paytrack.data.PaymentStatus
 import com.fixare.studio.paytrack.data.UserPreferencesRepository
@@ -60,12 +63,18 @@ class SettingsViewModel(
     fun exportData(context: Context) {
         viewModelScope.launch {
             try {
+                val clients = repository.getAllClients().first()
                 val logs = repository.getAllPaymentLogs().first()
                 val expenses = repository.getAllExpenses().first()
                 
                 val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
                 
                 withContext(Dispatchers.IO) {
+                    // Export Clients
+                    exportToCsv(context, "PayTrack_Clients_$timestamp.csv") { stream ->
+                        CsvExporter().exportClients(clients, stream)
+                    }
+                    
                     // Export Payments
                     exportToCsv(context, "PayTrack_Payments_$timestamp.csv") { stream ->
                         CsvExporter().exportPaymentLogs(logs, stream)
@@ -139,21 +148,24 @@ class SettingsViewModel(
                     reader.use {
                         val header = it.readLine()
                         if (header != null) {
-                            if (header.startsWith("ID,Client ID,Amount")) {
-                                // Import Payments
+                            if (header.startsWith("ID,Name,Project Name")) {
+                                importClients(it)
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(context, "Imported clients from $fileName", Toast.LENGTH_SHORT).show()
+                                }
+                            } else if (header.startsWith("ID,Client ID,Amount")) {
                                 importPayments(it)
                                 withContext(Dispatchers.Main) {
                                     Toast.makeText(context, "Imported payments from $fileName", Toast.LENGTH_SHORT).show()
                                 }
                             } else if (header.startsWith("ID,Amount,Category")) {
-                                // Import Expenses
                                 importExpenses(it)
                                 withContext(Dispatchers.Main) {
                                     Toast.makeText(context, "Imported expenses from $fileName", Toast.LENGTH_SHORT).show()
                                 }
                             } else {
                                 withContext(Dispatchers.Main) {
-                                    Toast.makeText(context, "Unknown CSV format", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Unknown CSV format or file", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         }
@@ -196,21 +208,85 @@ class SettingsViewModel(
         return result
     }
 
+    private fun parseCsvLine(line: String): List<String> {
+        val tokens = mutableListOf<String>()
+        var sb = StringBuilder()
+        var inQuotes = false
+        var i = 0
+        while (i < line.length) {
+            val c = line[i]
+            if (c == '"') {
+                if (inQuotes && i + 1 < line.length && line[i + 1] == '"') {
+                    sb.append('"')
+                    i++ // Skip escaped quote
+                } else {
+                    inQuotes = !inQuotes
+                }
+            } else if (c == ',' && !inQuotes) {
+                tokens.add(sb.toString())
+                sb = StringBuilder()
+            } else {
+                sb.append(c)
+            }
+            i++
+        }
+        tokens.add(sb.toString())
+        return tokens
+    }
+
+    private suspend fun importClients(reader: BufferedReader) {
+        var line = reader.readLine()
+        while (line != null) {
+            val tokens = parseCsvLine(line)
+            // ID,Name,Project Name,Contract Start,Payment Cycle,Rate,Currency,Status,Notes
+            if (tokens.size >= 8) {
+                try {
+                    val name = tokens[1]
+                    val project = tokens[2]
+                    val contractStart = tokens[3].toLongOrNull() ?: System.currentTimeMillis()
+                    val cycle = PaymentCycle.valueOf(tokens[4])
+                    val rate = tokens[5].toDouble()
+                    val currency = tokens[6]
+                    val status = ClientStatus.valueOf(tokens[7])
+                    val notes = if (tokens.size > 8) tokens[8] else ""
+                    
+                    repository.insertClient(
+                        Client(
+                            name = name,
+                            projectName = project,
+                            contractStartDate = contractStart,
+                            paymentCycle = cycle,
+                            rate = rate,
+                            currency = currency,
+                            status = status,
+                            notes = notes
+                        )
+                    )
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+            line = reader.readLine()
+        }
+    }
+
     private suspend fun importPayments(reader: BufferedReader) {
         var line = reader.readLine()
         val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
         while (line != null) {
-            val tokens = line.split(",")
-            // Expect: ID,Client ID,Amount,Date,Status,Note
-            if (tokens.size >= 6) {
+            val tokens = parseCsvLine(line)
+            // ID,Client ID,Amount,Date,Status,Note,IsManual,OriginalAmount,OriginalCurrency
+            if (tokens.size >= 5) {
                 try {
-                     // Note: We are ignoring ID to let Room auto-generate new ones to avoid conflicts
                      val clientIdStr = tokens[1]
-                     val clientId = if(clientIdStr == "null") null else clientIdStr.toInt()
-                     val amount = tokens[2].toDouble()
+                     val clientId = if(clientIdStr == "null" || clientIdStr.isBlank()) null else clientIdStr.toIntOrNull()
+                     val amount = tokens[2].toDoubleOrNull() ?: 0.0
                      val date = dateFormat.parse(tokens[3])?.time ?: System.currentTimeMillis()
-                     val status = PaymentStatus.valueOf(tokens[4])
+                     val status = try { PaymentStatus.valueOf(tokens[4]) } catch(e: Exception) { PaymentStatus.PAID }
                      val note = if(tokens.size > 5) tokens[5] else ""
+                     val isManual = if(tokens.size > 6) tokens[6].toBoolean() else false
+                     val originalAmount = if(tokens.size > 7 && tokens[7].isNotBlank()) tokens[7].toDoubleOrNull() else null
+                     val originalCurrency = if(tokens.size > 8 && tokens[8].isNotBlank()) tokens[8] else null
                      
                      repository.insertPaymentLog(
                          PaymentLog(
@@ -218,11 +294,14 @@ class SettingsViewModel(
                              amount = amount,
                              date = date,
                              status = status,
-                             note = note
+                             note = note,
+                             isManualIncome = isManual,
+                             originalAmount = originalAmount,
+                             originalCurrency = originalCurrency
                          )
                      )
                 } catch (e: Exception) {
-                    // skip invalid line
+                    e.printStackTrace()
                 }
             }
             line = reader.readLine()
@@ -233,11 +312,11 @@ class SettingsViewModel(
         var line = reader.readLine()
         val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
         while (line != null) {
-            val tokens = line.split(",")
-            // Expect: ID,Amount,Category,Date,Note
-            if (tokens.size >= 5) {
+            val tokens = parseCsvLine(line)
+            // ID,Amount,Category,Date,Note
+            if (tokens.size >= 4) {
                 try {
-                    val amount = tokens[1].toDouble()
+                    val amount = tokens[1].toDoubleOrNull() ?: 0.0
                     val category = tokens[2]
                     val date = dateFormat.parse(tokens[3])?.time ?: System.currentTimeMillis()
                     val note = if(tokens.size > 4) tokens[4] else ""
@@ -251,7 +330,7 @@ class SettingsViewModel(
                         )
                     )
                 } catch (e: Exception) {
-                    // skip invalid line
+                    e.printStackTrace()
                 }
             }
              line = reader.readLine()
