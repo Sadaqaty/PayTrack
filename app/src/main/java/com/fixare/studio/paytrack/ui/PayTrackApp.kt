@@ -45,7 +45,7 @@ import com.fixare.studio.paytrack.ui.welcome.WelcomeViewModel
 
 sealed class Screen(val route: String, val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector? = null) {
     object Welcome : Screen("welcome", "Welcome")
-    object Dashboard : Screen("dashboard", "Dashboard", Icons.Default.Dashboard)
+    object Dashboard : Screen("dashboard", "Dash", Icons.Default.Dashboard)
     object Clients : Screen("clients", "Clients", Icons.Default.People)
     object Logs : Screen("logs", "Logs", Icons.Default.History)
     object Wallet : Screen("wallet", "Wallet", Icons.Default.AccountBalanceWallet)

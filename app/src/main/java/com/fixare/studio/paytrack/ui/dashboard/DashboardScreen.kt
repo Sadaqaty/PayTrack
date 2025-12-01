@@ -5,7 +5,6 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -13,8 +12,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,13 +24,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CreditCard
-import androidx.compose.material.icons.filled.MoneyOff
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Card
@@ -41,7 +36,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
@@ -65,7 +59,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.fixare.studio.paytrack.ui.AppViewModelProvider
 import com.fixare.studio.paytrack.ui.components.IncomeExpenseBarChart
 import com.fixare.studio.paytrack.ui.theme.ErrorRed
-import com.fixare.studio.paytrack.ui.theme.SecondaryBlue
 import com.fixare.studio.paytrack.ui.theme.SuccessGreen
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
@@ -83,7 +76,7 @@ fun DashboardScreen(
     var isLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
-        delay(800) // Simulate loading for animation demo
+        delay(400) // Simulate loading for animation demo
         isLoading = false
     }
 
@@ -134,6 +127,29 @@ fun DashboardScreen(
                         ChartSection(uiState)
                     }
 
+                    // Overdue Payments
+                    if (uiState.overduePayments.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = "Overdue Payments",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = ErrorRed,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+                        }
+                        items(uiState.overduePayments) { item ->
+                            PaymentItemCard(
+                                clientName = item.clientName,
+                                clientCurrency = item.clientCurrency,
+                                amount = item.log.amount,
+                                date = item.log.date,
+                                statusColor = ErrorRed,
+                                currencySymbol = uiState.currencySymbol
+                            )
+                        }
+                    }
+
                     // Pending Payments
                     if (uiState.pendingPayments.isNotEmpty()) {
                         item {
@@ -144,16 +160,19 @@ fun DashboardScreen(
                                 modifier = Modifier.padding(top = 8.dp)
                             )
                         }
-                        items(uiState.pendingPayments) { payment ->
+                        items(uiState.pendingPayments) { item ->
                             PaymentItemCard(
-                                title = "Client Payment",
-                                amount = payment.amount,
-                                date = payment.date,
+                                clientName = item.clientName,
+                                clientCurrency = item.clientCurrency,
+                                amount = item.log.amount,
+                                date = item.log.date,
                                 statusColor = MaterialTheme.colorScheme.primary,
                                 currencySymbol = uiState.currencySymbol
                             )
                         }
-                    } else {
+                    }
+
+                    if (uiState.pendingPayments.isEmpty() && uiState.overduePayments.isEmpty()) {
                         item {
                             EmptyStateCard(message = "No pending payments")
                         }
@@ -411,7 +430,14 @@ fun ChartSection(uiState: DashboardUiState) {
 }
 
 @Composable
-fun PaymentItemCard(title: String, amount: Double, date: Long, statusColor: Color, currencySymbol: String) {
+fun PaymentItemCard(
+    clientName: String,
+    clientCurrency: String,
+    amount: Double,
+    date: Long,
+    statusColor: Color,
+    currencySymbol: String
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -444,12 +470,19 @@ fun PaymentItemCard(title: String, amount: Double, date: Long, statusColor: Colo
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
-                    Text(text = title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                    Text(text = clientName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                     Text(
                         text = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(date)),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    if (clientCurrency.isNotBlank()) {
+                        Text(
+                            text = "Currency: $clientCurrency",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
                 }
             }
             Text(

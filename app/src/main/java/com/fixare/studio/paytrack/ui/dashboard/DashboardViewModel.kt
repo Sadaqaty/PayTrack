@@ -82,15 +82,15 @@ class DashboardViewModel(
         // B. Existing Manual Pending/Overdue logs
         val manualPendingPayments = payments.filter { it.status == PaymentStatus.PENDING || it.status == PaymentStatus.OVERDUE }
         
-        // Combine them (Prefer existing logs if they match a date? 
-        // Logic in calculateDuePayments already skips periods covered by existing logs.
-        // So we can just concat.)
-        
         val allDuePayments = (virtualDuePayments + manualPendingPayments)
-            .sortedBy { it.date } // Sort by date (oldest first usually implies overdue)
+            .sortedBy { it.date }
 
-        val pendingPayments = allDuePayments.filter { it.status == PaymentStatus.PENDING }
-        val overduePayments = allDuePayments.filter { it.status == PaymentStatus.OVERDUE }
+        // Map to UI Model with Client Name
+        val pendingItems = allDuePayments.filter { it.status == PaymentStatus.PENDING }
+            .map { log -> createDashboardPaymentItem(log, clients) }
+            
+        val overdueItems = allDuePayments.filter { it.status == PaymentStatus.OVERDUE }
+            .map { log -> createDashboardPaymentItem(log, clients) }
 
         DashboardUiState(
             totalEarnedThisMonth = totalEarnedThisMonth,
@@ -98,8 +98,8 @@ class DashboardViewModel(
             totalEarnedAllTime = totalEarnedAllTime,
             totalExpenseThisMonth = totalExpenseThisMonth,
             totalExpenseThisYear = totalExpenseThisYear,
-            pendingPayments = pendingPayments,
-            overduePayments = overduePayments,
+            pendingPayments = pendingItems,
+            overduePayments = overdueItems,
             recentActivity = (payments.take(10).map { ActivityItem.Payment(it) } + expenses.take(10).map { ActivityItem.ExpenseItem(it) })
                 .sortedByDescending { it.date }
                 .take(10),
@@ -110,6 +110,15 @@ class DashboardViewModel(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = DashboardUiState()
     )
+    
+    private fun createDashboardPaymentItem(log: PaymentLog, clients: List<Client>): DashboardPaymentItem {
+        val client = clients.find { it.id == log.clientId }
+        return DashboardPaymentItem(
+            log = log,
+            clientName = client?.name ?: "Unknown Client",
+            clientCurrency = log.originalCurrency ?: client?.currency ?: ""
+        )
+    }
 
     private fun calculateDuePayments(
         client: Client, 
@@ -121,13 +130,11 @@ class DashboardViewModel(
         val calendar = Calendar.getInstance()
         calendar.timeInMillis = client.contractStartDate
         
-        // Logic: First payment due AFTER one cycle
         incrementCycle(calendar, client.paymentCycle)
         
         val today = Calendar.getInstance()
         val clientLogs = logs.filter { it.clientId == client.id }
         
-        // Iterate until today
         while (calendar.before(today) || isSamePeriod(calendar, today, client.paymentCycle)) {
             val periodDate = calendar.timeInMillis
             
@@ -137,20 +144,16 @@ class DashboardViewModel(
             }
             
             if (!isPaid) {
-                // Overdue if strictly before today (not just same day)
-                // Actually, if it's today, it's "Due Today" which is usually treated as Pending or Action Required.
-                // Let's say anything before today is Overdue. Today is Pending.
                 val isOverdue = calendar.before(today) && !isSameDay(calendar, today)
                 val status = if (isOverdue) PaymentStatus.OVERDUE else PaymentStatus.PENDING
                 
-                // Convert Amount
                 val clientRate = rates[client.currency] ?: 1.0
                 val targetRate = rates[targetCurrency] ?: 1.0
                 val baseAmount = if (clientRate != 0.0) client.rate / clientRate else client.rate
                 val convertedAmount = baseAmount * targetRate
                 
                 dueList.add(PaymentLog(
-                    id = (-1 * periodDate / 1000).toInt(), // Virtual ID (Negative to avoid collision with DB ids)
+                    id = (-1 * periodDate / 1000).toInt(),
                     clientId = client.id,
                     amount = convertedAmount,
                     originalAmount = client.rate,
@@ -216,14 +219,20 @@ class DashboardViewModel(
     }
 }
 
+data class DashboardPaymentItem(
+    val log: PaymentLog,
+    val clientName: String,
+    val clientCurrency: String
+)
+
 data class DashboardUiState(
     val totalEarnedThisMonth: Double = 0.0,
     val totalEarnedThisYear: Double = 0.0,
     val totalEarnedAllTime: Double = 0.0,
     val totalExpenseThisMonth: Double = 0.0,
     val totalExpenseThisYear: Double = 0.0,
-    val pendingPayments: List<PaymentLog> = emptyList(),
-    val overduePayments: List<PaymentLog> = emptyList(),
+    val pendingPayments: List<DashboardPaymentItem> = emptyList(),
+    val overduePayments: List<DashboardPaymentItem> = emptyList(),
     val recentActivity: List<ActivityItem> = emptyList(),
     val currencySymbol: String = "$"
 )
