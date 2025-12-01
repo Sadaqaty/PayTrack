@@ -48,16 +48,36 @@ class PayTrackNotificationWorker(
             
             val dueCal = Calendar.getInstance().apply { timeInMillis = nextDueDate }
             
+            // Ensure we are comparing dates correctly by stripping time potentially, but let's rely on strict millisecond if cycles are clean
+            // Or better, allow "today" to include everything up to end of today
+            
             val diff = dueCal.timeInMillis - today.timeInMillis
             val daysDiff = TimeUnit.MILLISECONDS.toDays(diff)
 
-            // Notify if due today, tomorrow, or OVERDUE (negative days)
-            // We want to keep reminding if it's overdue
-            if (daysDiff <= 1) { 
-                dueClients.add(Pair(client, daysDiff))
+            // Notify if due today (0), tomorrow (1), or OVERDUE (negative days)
+            // We check if nextDueDate is valid.
+            
+            // Correct calculation for days diff including negative values properly
+            // Use helper to get accurate day difference
+            val preciseDaysDiff = getDaysDifference(today, dueCal)
+
+            if (preciseDaysDiff <= 1) { 
+                dueClients.add(Pair(client, preciseDaysDiff))
             }
         }
         return dueClients
+    }
+    
+    private fun getDaysDifference(today: Calendar, due: Calendar): Long {
+        val t = today.clone() as Calendar
+        val d = due.clone() as Calendar
+        
+        // Set both to start of day to avoid time issues
+        t.set(Calendar.HOUR_OF_DAY, 0); t.set(Calendar.MINUTE, 0); t.set(Calendar.SECOND, 0); t.set(Calendar.MILLISECOND, 0)
+        d.set(Calendar.HOUR_OF_DAY, 0); d.set(Calendar.MINUTE, 0); d.set(Calendar.SECOND, 0); d.set(Calendar.MILLISECOND, 0)
+        
+        val diff = d.timeInMillis - t.timeInMillis
+        return TimeUnit.MILLISECONDS.toDays(diff)
     }
 
     private fun calculateNextDueDate(client: Client, logs: List<PaymentLog>): Long {
@@ -70,10 +90,12 @@ class PayTrackNotificationWorker(
         val clientLogs = logs.filter { it.clientId == client.id }
         val today = Calendar.getInstance()
         
-        // Same logic as ViewModel: find first unpaid period
-        // But check only up to "today + 1 cycle" to avoid infinite loops if logic fails, though while(before) is safe
+        // Check up to today + buffer
+        // If a payment is overdue, it should return that past date.
         
-        while (calendar.before(today) || isSamePeriod(calendar, today, client.paymentCycle)) {
+        // If logic is correct, we iterate until we find a date > today OR an unpaid date <= today
+        
+        while (true) {
              // Check if this period is paid
              val isPaid = clientLogs.any { log ->
                  val logCal = Calendar.getInstance().apply { timeInMillis = log.date }
@@ -81,12 +103,22 @@ class PayTrackNotificationWorker(
              }
              
              if (!isPaid) {
+                 // Found the first unpaid date.
+                 // It could be in the past (Overdue) or future (Next Due)
                  return calendar.timeInMillis
              }
              
+             // If this date is paid, move to next cycle
              incrementCycle(calendar, client.paymentCycle)
+             
+             // Safety break: if we are way in the future (e.g., more than 1 cycle ahead of today), just return it as next due
+             // We want to find the *first* unpaid, but we don't want to infinite loop if something is wrong.
+             // Let's say if calendar is > today + 1 year, break?
+             // Actually, logical break is when we pass today significantly if all previous are paid.
+             // But we need to return the *first* unpaid.
+             // If everything up to today is paid, the loop continues until it finds a future date which is naturally unpaid.
+             // So 'true' loop is fine as long as we return.
         }
-        return calendar.timeInMillis // Next future due date
     }
 
     private fun incrementCycle(calendar: Calendar, cycle: PaymentCycle) {
@@ -101,11 +133,12 @@ class PayTrackNotificationWorker(
     private fun isSamePeriod(cal1: Calendar, cal2: Calendar, cycle: PaymentCycle): Boolean {
         return when(cycle) {
             PaymentCycle.MONTHLY -> {
-                val diff = kotlin.math.abs(cal1.timeInMillis - cal2.timeInMillis)
-                val daysDiff = TimeUnit.MILLISECONDS.toDays(diff)
-                daysDiff < 20
+                cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) && 
+                cal1.get(Calendar.MONTH) == cal2.get(Calendar.MONTH)
             }
             PaymentCycle.WEEKLY -> {
+                // Weekly logic: check if they are in same week of year?
+                // Or just within 3 days?
                 val diff = kotlin.math.abs(cal1.timeInMillis - cal2.timeInMillis)
                 val daysDiff = TimeUnit.MILLISECONDS.toDays(diff)
                 daysDiff < 4
@@ -159,11 +192,11 @@ class PayTrackNotificationWorker(
         bigTextStyle.bigText(sb.toString())
 
         val notification = NotificationCompat.Builder(applicationContext, channelId)
-            .setSmallIcon(R.drawable.ic_launcher_foreground) 
+            .setSmallIcon(R.drawable.paytrack) // Updated icon
             .setContentTitle(contentTitle)
             .setContentText(contentText)
             .setStyle(bigTextStyle)
-            .setPriority(NotificationCompat.PRIORITY_HIGH) // High priority for money matters!
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .build()
 
