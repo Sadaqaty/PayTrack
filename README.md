@@ -35,9 +35,9 @@ Built with love and **100% Kotlin** using the latest Android development standar
 
 ## 📸 Screenshots
 
-| Dashboard | Client Details | Settings | Invoice PDF |
+| Dashboard | Client | Wallet | Transactional Logs |
 |:---:|:---:|:---:|:---:|
-| <!-- Add screenshot here --> 📱 | <!-- Add screenshot here --> 👤 | <!-- Add screenshot here --> ⚙️ | <!-- Add screenshot here --> 📄 |
+| ![Screenshot_20251201_174554_com fixare studio paytrack](https://github.com/user-attachments/assets/b59975df-5b2d-4189-842d-c8a146058863) | ![Screenshot_20251201_174601_com fixare studio paytrack](https://github.com/user-attachments/assets/e55bb5ce-0b15-4a45-9b26-dd87d94b5e49) | ![Screenshot_20251201_174650_com fixare studio paytrack](https://github.com/user-attachments/assets/6af095a7-8ed1-4240-8c68-76dca1f1bb7c) | ![Screenshot_20251201_174732_com fixare studio paytrack](https://github.com/user-attachments/assets/bb5bb492-1b26-4862-80e2-c5462f06f43c) |
 
 ---
 
@@ -74,5 +74,5 @@ This project is open source and available under the [MIT License](LICENSE).
 ---
 
 <div align="center">
-  <sub>Built with ❤️ by PayTrack Devs</sub>
+  <sub>Built with ❤️ by Fixare Studio Devs</sub>
 </div>
