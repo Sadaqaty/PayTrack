@@ -26,6 +26,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // TEMPORARY: Sign the release build with the debug key to allow local installation.
+            // For a real Play Store release, you must create a proper keystore and configure a release signingConfig.
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
