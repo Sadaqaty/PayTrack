@@ -13,6 +13,7 @@ import java.io.OutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.abs
 
 class PdfInvoiceGenerator(private val context: Context) {
 
@@ -36,6 +37,7 @@ class PdfInvoiceGenerator(private val context: Context) {
         val warningColor = Color.rgb(255, 152, 0) // Orange
         val errorColor = Color.rgb(244, 67, 54) // Red
         val white = Color.WHITE
+        val lightBackground = Color.rgb(245, 245, 245) // Light grey background for alternating rows or headers
 
         // Margins
         val startX = 50f
@@ -134,7 +136,16 @@ class PdfInvoiceGenerator(private val context: Context) {
         val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.US)
         val dateStr = dateFormat.format(Date(payment.date))
         
-        canvas.drawText(payment.id.toString().padStart(6, '0'), valueX, metaY, paint)
+        // FIX: If ID is 0 (virtual/pending), use a hash of date+client or "PENDING"
+        val invoiceIdDisplay = if (payment.id > 0) {
+            payment.id.toString().padStart(6, '0')
+        } else {
+            // For pending/virtual payments (id <= 0), generate a pseudo-ID or show "PENDING"
+            // Using absolute hash of date to make it look like an ID but positive
+            "P-${abs(payment.date.hashCode()).toString().take(6)}"
+        }
+        
+        canvas.drawText(invoiceIdDisplay, valueX, metaY, paint)
         canvas.drawText(dateStr, valueX, metaY + 20, paint)
         
         val statusColor = when(payment.status) {
@@ -225,17 +236,22 @@ class PdfInvoiceGenerator(private val context: Context) {
         // TOTAL SECTION
         // -----------------------------------------------------------------------
 
+        // Background for Total Section to make it pop
+        paint.color = lightBackground
+        paint.style = Paint.Style.FILL
+        canvas.drawRect(endX - 250f, currentY - 10, endX, currentY + 40, paint)
+
         paint.color = darkGray
         paint.textSize = 16f
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         
         val totalLabel = "TOTAL"
         paint.textAlign = Paint.Align.RIGHT
-        canvas.drawText(totalLabel, endX - 150, currentY, paint)
+        canvas.drawText(totalLabel, endX - 150, currentY + 25, paint)
         
         paint.color = primaryColor
         paint.textSize = 20f
-        canvas.drawText(amountStr, endX - 10, currentY, paint)
+        canvas.drawText(amountStr, endX - 10, currentY + 25, paint)
 
         // -----------------------------------------------------------------------
         // FOOTER SECTION
