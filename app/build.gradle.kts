@@ -13,11 +13,11 @@ val versionProps = Properties().apply {
 }
 
 android {
-    namespace = "com.fixare.studio.paytrack"
+    namespace = "studio.fixare.paytrack"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.fixare.studio.paytrack"
+        applicationId = "studio.fixare.paytrack"
         minSdk = 26
         targetSdk = 35
         versionCode = (System.getenv("VERSION_CODE") ?: versionProps.getProperty("VERSION_CODE", "1")).toInt()
