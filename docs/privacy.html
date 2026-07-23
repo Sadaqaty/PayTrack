@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — PayTrack</title>
+  <meta name="description" content="PayTrack privacy policy. Learn how PayTrack handles your data — all stored locally on your device with no cloud servers.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://paytrack.fixare.studio/privacy.html">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://paytrack.fixare.studio/privacy.html">
+  <meta property="og:title" content="Privacy Policy — PayTrack">
+  <meta property="og:description" content="All data stored locally. No cloud servers. Your financial data never leaves your device.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="header">
+    <div class="container header-inner">
+      <a href="/" class="logo">Pay<span>Track</span></a>
+      <nav>
+        <ul class="nav" id="nav">
+          <li><a href="/">Home</a></li>
+          <li><a href="features.html">Features</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="privacy.html" class="active">Privacy</a></li>
+          <li><a href="/" class="nav-cta">Get the App</a></li>
+        </ul>
+      </nav>
+      <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <section class="page-header">
+    <div class="container">
+      <h1>Privacy Policy</h1>
+      <p>Last updated: July 23, 2025</p>
+    </div>
+  </section>
+
+  <section class="content">
+    <div class="container">
+
+      <p>PayTrack ("the App") is developed by Fixare Studio ("we", "us", or "our"). This Privacy Policy explains how the App handles your information. We believe in transparency and your right to privacy.</p>
+
+      <h2>Summary</h2>
+      <p><strong>PayTrack stores all data locally on your device.</strong> We do not collect, transmit, or have access to any of your financial data, client information, or personal details. There are no cloud servers, no accounts, and no data sharing with third parties.</p>
+
+      <h2>Data Storage</h2>
+      <h3>Local Database</h3>
+      <p>All client records, payment logs, expenses, and user preferences are stored in an encrypted SQLite database on your device. This database remains entirely on your phone and is never uploaded to any external server.</p>
+
+      <h3>DataStore Preferences</h3>
+      <p>User preferences (currency settings, notification preferences, profile information) are stored locally using Android DataStore, which is part of your device's secure internal storage.</p>
+
+      <h2>Data Collection</h2>
+      <p>PayTrack does <strong>not</strong> collect:</p>
+      <ul>
+        <li>Personal identification information</li>
+        <li>Financial data or transaction records</li>
+        <li>Device identifiers or advertising IDs</li>
+        <li>Location data</li>
+        <li>Usage analytics or crash reports</li>
+      </ul>
+
+      <h2>Network Usage</h2>
+      <p>PayTrack uses the internet connection solely for one purpose: fetching daily exchange rates from a public API (open.er-api.com) to provide multi-currency conversion. This request sends no personal data — only a request for current exchange rate values. No information about your clients, payments, or financial data is transmitted.</p>
+
+      <h2>Notifications</h2>
+      <p>PayTrack may send local notifications to remind you about due or overdue payments. These notifications are generated entirely on your device. You can disable notifications at any time in the App's Settings screen.</p>
+
+      <h2>Data Export</h2>
+      <p>When you export your data as CSV files, the files are saved locally to your device's Downloads folder. You control where these files go and who has access to them. PayTrack does not upload or share exported data.</p>
+
+      <h2>Third-Party Services</h2>
+      <p>PayTrack does not integrate with any third-party analytics, advertising, or tracking services. The only external network call is to a public exchange rate API.</p>
+
+      <h2>Children's Privacy</h2>
+      <p>PayTrack is not directed at children under 13. We do not knowingly collect information from children.</p>
+
+      <h2>Changes to This Policy</h2>
+      <p>We may update this Privacy Policy from time to time. Any changes will be reflected on this page with an updated "Last updated" date. We encourage you to review this page periodically.</p>
+
+      <h2>Contact</h2>
+      <p>If you have questions about this Privacy Policy, contact us at:</p>
+      <p><strong>Fixare Studio</strong><br>
+      <a href="https://fixare.studio" target="_blank" rel="noopener">https://fixare.studio</a><br>
+      <a href="https://github.com/Sadaqaty/PayTrack/issues" target="_blank" rel="noopener">GitHub Issues</a></p>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="logo">Pay<span>Track</span></div>
+          <p>Freelance income tracker built for freelancers, contractors, and gig workers who mean business.</p>
+        </div>
+        <div>
+          <h4>Product</h4>
+          <ul>
+            <li><a href="features.html">Features</a></li>
+            <li><a href="/">Download</a></li>
+            <li><a href="https://github.com/Sadaqaty/PayTrack" target="_blank" rel="noopener">GitHub</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Company</h4>
+          <ul>
+            <li><a href="about.html">About</a></li>
+            <li><a href="https://fixare.studio" target="_blank" rel="noopener">Fixare Studio</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="privacy.html">Privacy Policy</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 Fixare Studio. All rights reserved.</p>
+        <p>Built with care in Pakistan.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('menuToggle').addEventListener('click', function() {
+      document.getElementById('nav').classList.toggle('open');
+    });
+  </script>
+</body>
+</html>
