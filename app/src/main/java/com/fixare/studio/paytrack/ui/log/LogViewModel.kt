@@ -5,8 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.fixare.studio.paytrack.data.Client
 import com.fixare.studio.paytrack.data.Expense
 import com.fixare.studio.paytrack.data.PayTrackRepository
-import com.fixare.studio.paytrack.data.PaymentLogWithClient
 import com.fixare.studio.paytrack.data.PaymentLog
+import com.fixare.studio.paytrack.data.PaymentLogWithClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -41,33 +41,25 @@ class LogViewModel(private val repository: PayTrackRepository) : ViewModel() {
 
     val transactions: StateFlow<List<TransactionItem>> = combine(
         repository.getAllPaymentLogsWithClient(),
-        repository.getManualIncomeLogs(),
         repository.getAllExpenses(),
         _filterClientId
-    ) { payments, manualIncome, expenses, filterId ->
-        
+    ) { payments, expenses, filterId ->
+
         val filteredPayments = if (filterId != null) {
             payments.filter { it.client?.id == filterId }
         } else {
             payments
         }
-        
+
         val incomeItems = filteredPayments.map { TransactionItem.Income(it) }
-        
-        // Only show manual income and expenses if no client filter is applied
-        val manualIncomeItems = if (filterId == null) {
-            manualIncome.map { TransactionItem.ManualIncome(it) }
-        } else {
-            emptyList()
-        }
-        
+
         val expenseItems = if (filterId == null) {
             expenses.map { TransactionItem.ExpenseItem(it) }
         } else {
             emptyList()
         }
-        
-        (incomeItems + manualIncomeItems + expenseItems).sortedByDescending { it.date }
+
+        (incomeItems + expenseItems).sortedByDescending { it.date }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),

@@ -187,7 +187,7 @@ class DashboardViewModel(
     private fun isSamePeriod(cal1: Calendar, cal2: Calendar, cycle: PaymentCycle): Boolean {
         return when(cycle) {
             PaymentCycle.MONTHLY -> {
-                cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) && 
+                cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
                 cal1.get(Calendar.MONTH) == cal2.get(Calendar.MONTH)
             }
             PaymentCycle.WEEKLY -> {
@@ -196,7 +196,11 @@ class DashboardViewModel(
                 daysDiff < 4
             }
             PaymentCycle.DAILY -> isSameDay(cal1, cal2)
-            else -> false 
+            PaymentCycle.HOURLY -> {
+                cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
+                cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR) &&
+                cal1.get(Calendar.HOUR_OF_DAY) == cal2.get(Calendar.HOUR_OF_DAY)
+            }
         }
     }
 

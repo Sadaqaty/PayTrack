@@ -54,7 +54,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val context = LocalContext.current
-    var notificationsEnabled by remember { mutableStateOf(true) }
+    val notificationsEnabled by viewModel.notificationsEnabled.collectAsState(initial = true)
     val localCurrency by viewModel.localCurrency.collectAsState(initial = "USD")
     val userName by viewModel.userName.collectAsState(initial = "")
     val companyName by viewModel.companyName.collectAsState(initial = "")
@@ -178,7 +178,7 @@ fun SettingsScreen(
                 trailing = {
                     Switch(
                         checked = notificationsEnabled,
-                        onCheckedChange = { notificationsEnabled = it }
+                        onCheckedChange = { viewModel.setNotificationsEnabled(it) }
                     )
                 }
             )

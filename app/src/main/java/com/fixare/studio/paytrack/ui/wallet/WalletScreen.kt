@@ -254,7 +254,11 @@ fun AddTransactionContent(
         
         OutlinedTextField(
             value = amount,
-            onValueChange = { if (it.all { char -> char.isDigit() || char == '.' }) amount = it },
+            onValueChange = { newValue ->
+                if (newValue.isEmpty() || newValue.matches(Regex("^\\d*\\.?\\d{0,2}$"))) {
+                    amount = newValue
+                }
+            },
             label = { Text("Amount") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true

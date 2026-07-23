@@ -133,18 +133,20 @@ class PayTrackNotificationWorker(
     private fun isSamePeriod(cal1: Calendar, cal2: Calendar, cycle: PaymentCycle): Boolean {
         return when(cycle) {
             PaymentCycle.MONTHLY -> {
-                cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) && 
+                cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
                 cal1.get(Calendar.MONTH) == cal2.get(Calendar.MONTH)
             }
             PaymentCycle.WEEKLY -> {
-                // Weekly logic: check if they are in same week of year?
-                // Or just within 3 days?
                 val diff = kotlin.math.abs(cal1.timeInMillis - cal2.timeInMillis)
                 val daysDiff = TimeUnit.MILLISECONDS.toDays(diff)
                 daysDiff < 4
             }
             PaymentCycle.DAILY -> cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR) && cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR)
-            else -> false 
+            PaymentCycle.HOURLY -> {
+                cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
+                cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR) &&
+                cal1.get(Calendar.HOUR_OF_DAY) == cal2.get(Calendar.HOUR_OF_DAY)
+            }
         }
     }
 

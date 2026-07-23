@@ -39,12 +39,19 @@ class SettingsViewModel(
 ) : ViewModel() {
 
     val localCurrency: Flow<String> = userPreferencesRepository.localCurrency
+    val notificationsEnabled: Flow<Boolean> = userPreferencesRepository.notificationsEnabled
     val userName: Flow<String> = userPreferencesRepository.userName
     val companyName: Flow<String> = userPreferencesRepository.companyName
 
     fun setLocalCurrency(currency: String) {
         viewModelScope.launch {
             userPreferencesRepository.setLocalCurrency(currency)
+        }
+    }
+
+    fun setNotificationsEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferencesRepository.setNotificationsEnabled(enabled)
         }
     }
 
