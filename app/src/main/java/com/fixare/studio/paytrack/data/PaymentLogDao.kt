@@ -19,7 +19,7 @@ interface PaymentLogDao {
     @Query("SELECT * FROM payment_logs WHERE clientId = :clientId ORDER BY date DESC")
     fun getPaymentLogsForClient(clientId: Int): Flow<List<PaymentLog>>
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(paymentLog: PaymentLog)
 
     @Query("SELECT SUM(amount) FROM payment_logs WHERE status = 'PAID' AND date >= :startDate AND date <= :endDate")

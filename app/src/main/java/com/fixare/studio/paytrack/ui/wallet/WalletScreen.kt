@@ -52,8 +52,17 @@ import com.fixare.studio.paytrack.ui.AppViewModelProvider
 import com.fixare.studio.paytrack.ui.theme.ErrorRed
 import com.fixare.studio.paytrack.ui.theme.SuccessGreen
 import java.text.SimpleDateFormat
+import java.util.Currency
 import java.util.Date
 import java.util.Locale
+
+private fun getCurrencySymbol(currencyCode: String): String {
+    return try {
+        Currency.getInstance(currencyCode).symbol
+    } catch (e: Exception) {
+        currencyCode
+    }
+}
 
 @Composable
 fun WalletScreen(
@@ -98,7 +107,7 @@ fun WalletScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(uiState.recentExpenses) { expense ->
-                    ExpenseItem(expense)
+                    ExpenseItem(expense, uiState.localCurrency)
                 }
             }
         }
@@ -144,6 +153,7 @@ fun WalletScreen(
 
 @Composable
 fun BalanceCard(uiState: WalletUiState) {
+    val currencySymbol = getCurrencySymbol(uiState.localCurrency)
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
@@ -161,7 +171,7 @@ fun BalanceCard(uiState: WalletUiState) {
                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
             )
             Text(
-                text = "$${String.format(Locale.US, "%.2f", uiState.balance)}",
+                text = "$currencySymbol${String.format(Locale.US, "%.2f", uiState.balance)}",
                 style = MaterialTheme.typography.displayMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -175,13 +185,15 @@ fun BalanceCard(uiState: WalletUiState) {
                     label = "Income",
                     amount = uiState.totalIncome,
                     icon = Icons.Default.ArrowUpward,
-                    color = SuccessGreen
+                    color = SuccessGreen,
+                    currencySymbol = currencySymbol
                 )
                 BalanceItem(
                     label = "Expenses",
                     amount = uiState.totalExpenses,
                     icon = Icons.Default.ArrowDownward,
-                    color = ErrorRed
+                    color = ErrorRed,
+                    currencySymbol = currencySymbol
                 )
             }
         }
@@ -189,7 +201,7 @@ fun BalanceCard(uiState: WalletUiState) {
 }
 
 @Composable
-fun BalanceItem(label: String, amount: Double, icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color) {
+fun BalanceItem(label: String, amount: Double, icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color, currencySymbol: String = "$") {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             modifier = Modifier
@@ -202,12 +214,13 @@ fun BalanceItem(label: String, amount: Double, icon: androidx.compose.ui.graphic
         }
         Spacer(modifier = Modifier.height(4.dp))
         Text(text = label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
-        Text(text = "$${String.format(Locale.US, "%.2f", amount)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+        Text(text = "$currencySymbol${String.format(Locale.US, "%.2f", amount)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
     }
 }
 
 @Composable
-fun ExpenseItem(expense: Expense) {
+fun ExpenseItem(expense: Expense, currencyCode: String = "USD") {
+    val currencySymbol = getCurrencySymbol(currencyCode)
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -229,7 +242,7 @@ fun ExpenseItem(expense: Expense) {
                 )
             }
             Text(
-                text = "-$${String.format(Locale.US, "%.2f", expense.amount)}",
+                text = "-$currencySymbol${String.format(Locale.US, "%.2f", expense.amount)}",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = ErrorRed

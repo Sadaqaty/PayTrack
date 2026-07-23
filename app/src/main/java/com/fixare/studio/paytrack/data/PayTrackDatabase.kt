@@ -20,7 +20,7 @@ abstract class PayTrackDatabase : RoomDatabase() {
         fun getDatabase(context: Context): PayTrackDatabase {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, PayTrackDatabase::class.java, "paytrack_database")
-                    .fallbackToDestructiveMigration()
+                    .fallbackToDestructiveMigrationFrom(1, 2)
                     .build()
                     .also { Instance = it }
             }

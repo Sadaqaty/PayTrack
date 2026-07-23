@@ -153,7 +153,7 @@ class DashboardViewModel(
                 val convertedAmount = baseAmount * targetRate
                 
                 dueList.add(PaymentLog(
-                    id = (-1 * periodDate / 1000).toInt(),
+                    id = (-1 * (client.id * 100000L + periodDate / 1000)).toInt(),
                     clientId = client.id,
                     amount = convertedAmount,
                     originalAmount = client.rate,

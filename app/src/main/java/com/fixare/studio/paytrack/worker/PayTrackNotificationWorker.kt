@@ -12,6 +12,8 @@ import com.fixare.studio.paytrack.data.ClientStatus
 import com.fixare.studio.paytrack.data.PayTrackDatabase
 import com.fixare.studio.paytrack.data.PaymentCycle
 import com.fixare.studio.paytrack.data.PaymentLog
+import com.fixare.studio.paytrack.data.UserPreferencesRepository
+import com.fixare.studio.paytrack.data.dataStore
 import kotlinx.coroutines.flow.first
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
@@ -22,6 +24,10 @@ class PayTrackNotificationWorker(
 ) : CoroutineWorker(context, workerParams) {
 
     override suspend fun doWork(): Result {
+        val prefsRepo = UserPreferencesRepository(applicationContext.dataStore)
+        val notificationsEnabled = prefsRepo.notificationsEnabled.first()
+        if (!notificationsEnabled) return Result.success()
+
         val database = PayTrackDatabase.getDatabase(applicationContext)
         val clientDao = database.clientDao()
         val paymentLogDao = database.paymentLogDao()

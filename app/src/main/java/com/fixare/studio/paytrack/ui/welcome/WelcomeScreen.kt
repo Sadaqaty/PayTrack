@@ -143,24 +143,22 @@ fun WelcomeScreen(
 
             Button(
                 onClick = {
-                    val permissionsToRequest = mutableListOf<String>()
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
-                    }
-                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                        permissionsToRequest.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                    }
-                    
-                    if (permissionsToRequest.isNotEmpty()) {
-                        permissionsLauncher.launch(permissionsToRequest.toTypedArray())
-                    } else {
-                        // No runtime permissions needed for storage on Android 10+ (MediaStore used)
-                        permissionsGranted = true
-                    }
-                    
                     if (userName.isNotBlank()) {
                         coroutineScope.launch {
                             viewModel.saveProfile(userName, companyName, selectedCurrency)
+
+                            val permissionsToRequest = mutableListOf<String>()
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
+                            }
+                            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                                permissionsToRequest.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                            }
+
+                            if (permissionsToRequest.isNotEmpty()) {
+                                permissionsLauncher.launch(permissionsToRequest.toTypedArray())
+                            }
+
                             onContinue()
                         }
                     }

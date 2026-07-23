@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -76,6 +77,7 @@ class WalletViewModel(
             balance = balance,
             totalIncome = totalIncome,
             totalExpenses = totalExpenses,
+            localCurrency = targetCurrency,
             recentExpenses = convertedExpenses.sortedByDescending { it.date }.take(10)
         )
     }.stateIn(
@@ -123,5 +125,6 @@ data class WalletUiState(
     val balance: Double = 0.0,
     val totalIncome: Double = 0.0,
     val totalExpenses: Double = 0.0,
+    val localCurrency: String = "USD",
     val recentExpenses: List<Expense> = emptyList()
 )
