@@ -1,8 +1,15 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.devtools.ksp)
+}
+
+val versionPropsFile = rootProject.file("version.properties")
+val versionProps = Properties().apply {
+    if (versionPropsFile.exists()) load(versionPropsFile.inputStream())
 }
 
 android {
@@ -13,8 +20,8 @@ android {
         applicationId = "com.fixare.studio.paytrack"
         minSdk = 26
         targetSdk = 35
-        versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 1
-        versionName = System.getenv("VERSION_NAME") ?: "1.0"
+        versionCode = (System.getenv("VERSION_CODE") ?: versionProps.getProperty("VERSION_CODE", "1")).toInt()
+        versionName = System.getenv("VERSION_NAME") ?: versionProps.getProperty("VERSION_NAME", "1.0.0")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
