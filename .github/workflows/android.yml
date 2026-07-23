@@ -41,7 +41,7 @@ jobs:
           echo "Building version $VERSION_NAME (code: $VERSION_CODE)"
 
       - name: Decode keystore
-        run: echo "${{ secrets.FIXARE_KEYSTORE_BASE64 }}" | base64 -d > fixare-build-key.jks
+        run: echo "${{ secrets.FIXARE_KEYSTORE_BASE64 }}" | base64 -d > app/fixare-build-key.jks
 
       - name: Build release APK
         env:
